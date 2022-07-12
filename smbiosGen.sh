@@ -1,16 +1,16 @@
 #!/bin/bash
-# smbiosGen.sh
+# smbiosgen.sh
 # Script to generate SMBIOS data.
 # Created by naveenkrdy on 18/09/2019
 
-curr_dir=$(dirname "$0")
-cd $curr_dir
+pwd=$(dirname "$0")
+cd $pwd
 
 if [[ ! -d bin ]]; then
     echo 'Missing bins folder'
     exit 1
 else
-    PATH="${curr_dir}/bin:${PATH}"
+    PATH="${pwd}/bin:${PATH}"
 fi
 
 # START
