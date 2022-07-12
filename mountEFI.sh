@@ -1,5 +1,5 @@
 #!/bin/bash
-# mountEFI.sh
+# mountefi.sh
 # Script to mount EFI partition on macOS
 
 # NOTE: Based on CloverPackage MountESP script.

@@ -1,51 +1,66 @@
 #!/usr/bin/env bash
-# extractIFR.sh
+# extractifr.sh
 # Script to extract IFR from BIOS file
 # Created by naveenkrdy on 7/06/2021
 
-curr_dir=$(dirname "$0")
-cd $curr_dir
+ver="1.1"
+file="$1"
+ifr_file="${file}_ifr.txt"
+temp="./temp"
+pwd=$(dirname "$0")
 
-if [[ $# == 0 ]]; then
-    echo 'Usage : ./extractIFR <bios-file>'
-    exit 1
-else
-    file="$1"
+_print() {
+  echo ":: $*"
+}
+
+_error() {
+  echo >&2 "!! $*"
+  exit 1
+}
+
+_find_guid(){
+	local bin_file="$1"
+	local pattern="530079007300740065006D0020004C0061006E0067007500610067006500"
+	local guid=$(UEFIFind $bin_file body list $pattern)
+	
+	echo $guid
+	
+}
+
+extract_guid(){
+	local file="$1"
+	local guid=$(_find_guid $file)
+	if [[ ! $guid ]];then
+		_error "Could not find GUID."
+	fi
+	
+	_print "Found IFR in GUID : $guid"
+	_print 'Extracting GUID'
+	UEFIExtract $file $guid -o temp -m body -t >/dev/null
+	
+	_print 'Extracting IFR'
+	for bin in ${temp}/*; do
+	    local supress_error=$(ifrextract $bin $ifr_file >/dev/null)
+	done
+
+	_print "Saved to $ifr_file"
+}
+
+#START
+cd $pwd
+
+if [[ ! $file ]]; then
+    _error 'Usage: ./extractIFR.sh <bios-file>'
 fi
 
 if [[ ! -d bin ]]; then
-    echo 'Missing bins folder'
-    exit 1
+    _error 'Missing bins folder.'
 else
-    PATH="${curr_dir}/bin:${PATH}"
+    PATH="${pwd}/bin:${PATH}"
 fi
 
-#START
-ver="1.0"
-ifr_file="${file}_ifr.txt"
-temp_dir="./temp"
-
-echo
-echo "IFR Extractor v$ver"
-rm -rf $temp_dir $ifr_file
-
-pattern="530079007300740065006D0020004C0061006E0067007500610067006500"
-guid=$(UEFIFind $file body list $pattern)
-
-if [[ ! "$guid" ]];then
-	echo "Failed to find GUID"
-	exit 1
-fi
-echo "Found IFR in GUID : $guid"
-
-echo 'Extracting GUID'
-UEFIExtract $file $guid -o temp -m body -t >/dev/null
-
-echo 'Extracting IFR'
-for bin in ${temp_dir}/*; do
-    supress_error=$(ifrextract $bin $ifr_file >/dev/null)
-done
-
-echo "Saved as $ifr_file"
-rm -rf $temp_dir
-echo 'Done'
+_print "IFR Extractor v$ver"
+rm -rf $temp $ifr_file
+extract_guid $file
+rm -rf $temp
+_print 'Done'
